@@ -36,10 +36,12 @@
       "label": "NPU",
       "name": "AI / ML",
       "skills": [
-        "Python",
-        "Linear algebra"
+        "LLMs",
+        "Neural networks",
+        "Claude Code",
+        "Python"
       ],
-      "use": "my AI and Machine Learning stream at Carleton. This block is still being built",
+      "use": "my AI and Machine Learning stream at Carleton, and building with Claude Code and GitHub Copilot every day",
       "status": "In progress"
     },
     {
