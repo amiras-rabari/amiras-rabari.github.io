@@ -584,3 +584,22 @@ html { background: var(--sheet); }
 /* Let table captions sit outside the rounded box instead of being clipped by it */
 .kv { overflow: visible; }
 .kv caption { padding-left: 0.2rem; }
+
+/* Footer contact: clickable email with the Copy button always on the same line */
+.contact { grid-template-columns: minmax(0, 1.7fr) repeat(3, minmax(0, 1fr)); }
+.contact .email-row { display: flex; align-items: center; gap: 0.6rem; flex-wrap: nowrap; min-width: 0; }
+.contact .email-row .v { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; overflow-wrap: normal; }
+.contact .email-row .copy { flex: none; margin-left: 0; padding: 0.1rem 0.6rem; }
+@media (max-width: 760px) {
+  .contact { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .contact > div { border-right: 1px solid var(--line); border-bottom: none; }
+  .contact > div:nth-child(2) { border-right: 1px solid var(--line); }
+  .contact > div:nth-child(-n+2) { border-bottom: none; }
+  .contact > .email-cell { grid-column: 1 / -1; border-right: none; border-bottom: 1px solid var(--line); }
+  .contact > div:last-child { border-right: none; }
+}
+@media (max-width: 420px) {
+  .contact { grid-template-columns: minmax(0, 1fr); }
+  .contact > div, .contact > div:nth-child(2) { border-right: none; border-bottom: 1px solid var(--line); }
+  .contact > div:last-child { border-bottom: none; }
+}
