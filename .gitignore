@@ -2,3 +2,5 @@ node_modules/
 _site/
 .DS_Store
 Thumbs.db
+CLAUDE.md
+CLAUDE.local.md
