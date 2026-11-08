@@ -1,0 +1,87 @@
+// Small progressive enhancements. Every page works without this file.
+(function () {
+  var root = document.documentElement;
+
+  // Theme toggle (the saved choice is applied early by an inline script in <head>)
+  var themeBtn = document.getElementById('theme-toggle');
+  function isDark() {
+    var t = root.getAttribute('data-theme');
+    return t ? t === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+  }
+  function labelTheme() { if (themeBtn) themeBtn.textContent = isDark() ? 'Light' : 'Dark'; }
+  if (themeBtn) {
+    labelTheme();
+    themeBtn.addEventListener('click', function () {
+      var next = isDark() ? 'light' : 'dark';
+      root.setAttribute('data-theme', next);
+      try { localStorage.setItem('theme', next); } catch (e) {}
+      labelTheme();
+    });
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', labelTheme);
+  }
+
+  // Mobile menu
+  var menuBtn = document.getElementById('menu-btn'), nav = document.getElementById('site-nav');
+  if (menuBtn && nav) {
+    menuBtn.addEventListener('click', function () {
+      var open = nav.classList.toggle('open');
+      menuBtn.setAttribute('aria-expanded', String(open));
+      menuBtn.textContent = open ? 'Close' : 'Menu';
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && nav.classList.contains('open')) { menuBtn.click(); menuBtn.focus(); }
+    });
+  }
+
+  // Copy buttons
+  document.querySelectorAll('[data-copy]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var el = document.getElementById(b.getAttribute('data-copy'));
+      var text = el.textContent.trim();
+      function selectIt() { var r = document.createRange(); r.selectNodeContents(el); var s = getSelection(); s.removeAllRanges(); s.addRange(r); }
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(text).then(function () {
+          b.textContent = 'Copied';
+          setTimeout(function () { b.textContent = 'Copy'; }, 1800);
+        }, selectIt);
+      } else { selectIt(); }
+    });
+  });
+
+  // Die floorplan: show where each block's skills were used
+  var cap = document.getElementById('chip-cap');
+  var blocks = document.querySelectorAll('.blk');
+  blocks.forEach(function (blk) {
+    function on() {
+      blocks.forEach(function (q) { q.classList.remove('on'); });
+      blk.classList.add('on');
+      cap.textContent = '';
+      var b = document.createElement('b');
+      b.textContent = blk.dataset.label + ', ' + blk.dataset.name + '.';
+      cap.appendChild(b);
+      cap.appendChild(document.createTextNode(' Used in ' + blk.dataset.use + '.'));
+    }
+    blk.addEventListener('mouseenter', on);
+    blk.addEventListener('focus', on);
+    blk.addEventListener('click', on);
+  });
+
+  // Blog tag filter
+  var filters = document.querySelector('.filters');
+  if (filters) {
+    var items = document.querySelectorAll('[data-tags]');
+    function apply(tag) {
+      filters.querySelectorAll('button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.tag === tag)); });
+      items.forEach(function (li) {
+        li.hidden = tag !== 'all' && li.dataset.tags.split(' ').indexOf(tag) === -1;
+      });
+    }
+    filters.addEventListener('click', function (e) {
+      var b = e.target.closest('button'); if (!b) return;
+      apply(b.dataset.tag);
+      history.replaceState(null, '', b.dataset.tag === 'all' ? location.pathname : '#' + b.dataset.tag);
+    });
+    var initial = location.hash.slice(1);
+    if (initial && filters.querySelector('[data-tag="' + CSS.escape(initial) + '"]')) apply(initial);
+  }
+})();

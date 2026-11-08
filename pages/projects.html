@@ -1,0 +1,64 @@
+---
+title: Projects
+description: Projects by Amiras Rabari: a relational database built from scratch in C++, the CineSmart movie platform, a relational algebra query engine and an IoT flood detection system.
+path: /projects/
+nav: projects
+---
+<div class="wrap">
+  <header class="page-head">
+    <h1>Projects</h1>
+    <p class="lede">Systems I built to understand how they work from the inside. Open any spec sheet for the architecture and the hard parts.</p>
+  </header>
+
+  <section class="page-section">
+    <div class="specs wide">
+      <article class="spec">
+        <header><span class="kind">Systems, C++20</span><h3><a href="/projects/database-from-scratch/">Database from scratch</a></h3><p>A relational database engine built from the disk page up: SQL parser, cost-based optimizer, iterator execution engine and a buffer pool. No database libraries or parser generators.</p></header>
+        <table><tbody>
+          <tr><td>Min. memory budget</td><td>4 pages</td></tr>
+          <tr><td>Join algorithms</td><td>Nested loop, sort-merge, Grace hash</td></tr>
+          <tr><td>Optimizer</td><td>Selinger DP, up to 6 tables</td></tr>
+          <tr><td>Buffer pool</td><td>LRU / CLOCK</td></tr>
+          <tr><td>Verified against</td><td>PostgreSQL</td></tr>
+        </tbody></table>
+        <div class="foot"><span class="stack">C++  SQL  GDB</span><a href="/projects/database-from-scratch/">Read the spec sheet</a></div>
+      </article>
+
+      <article class="spec">
+        <header><span class="kind">Full stack, Java</span><h3><a href="/projects/cinesmart/">CineSmart</a></h3><p>A movie discovery platform for Canada: search, watchlists, ratings, recommendations, and where each title is streaming.</p></header>
+        <table><tbody>
+          <tr><td>REST endpoints</td><td>36</td></tr>
+          <tr><td>Database schema</td><td>16 tables</td></tr>
+          <tr><td>Data sources</td><td>OMDb, TMDB, Watchmode</td></tr>
+          <tr><td>Auth</td><td>JWT, rotating refresh tokens</td></tr>
+          <tr><td>Candidates scored</td><td>300 per user</td></tr>
+        </tbody></table>
+        <div class="foot"><span class="stack">Java  Spring Boot  React  Redis</span><a href="/projects/cinesmart/">Read the spec sheet</a></div>
+      </article>
+
+      <article class="spec">
+        <header><span class="kind">Compilers, C++17</span><h3><a href="/projects/query-engine/">Relational algebra query engine</a></h3><p>An interpreter that tokenizes, parses, validates and runs relational algebra queries, with precise line and column errors.</p></header>
+        <table><tbody>
+          <tr><td>Operators</td><td>8</td></tr>
+          <tr><td>Largest join benchmark</td><td>64,000 × 64,000</td></tr>
+          <tr><td>Measured growth</td><td>log-log slope 2.05</td></tr>
+          <tr><td>Parser</td><td>Recursive descent, LL(2)</td></tr>
+          <tr><td>Memory safety</td><td>RAII, unique_ptr AST</td></tr>
+        </tbody></table>
+        <div class="foot"><span class="stack">C++17  Make  Linux</span><a href="/projects/query-engine/">Read the spec sheet</a></div>
+      </article>
+
+      <article class="spec">
+        <header><span class="kind">Embedded, hardware</span><h3><a href="/projects/flood-detection/">IoT flood detection system</a></h3><p>A sensor array on a custom PCB that watches water levels and sends phone alerts over Wi-Fi. My Seneca College capstone.</p></header>
+        <table><tbody>
+          <tr><td>MCU</td><td>ATmega328P</td></tr>
+          <tr><td>Telemetry</td><td>ESP8266, AT over UART</td></tr>
+          <tr><td>Sensors</td><td>Ultrasonic, float, flow, DHT11</td></tr>
+          <tr><td>Power rails</td><td>12 V → 5 V → 3.3 V</td></tr>
+          <tr><td>Bill of materials</td><td>≈ $110 CAD</td></tr>
+        </tbody></table>
+        <div class="foot"><span class="stack">Embedded C  Arduino  PCB</span><a href="/projects/flood-detection/">Read the spec sheet</a></div>
+      </article>
+    </div>
+  </section>
+</div>

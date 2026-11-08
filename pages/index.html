@@ -1,0 +1,75 @@
+---
+title: Amiras Rabari, systems and software developer
+path: /
+nav: home
+---
+<div class="wrap">
+  <section class="hero">
+    <div>
+      <p class="part">Part no. <b>AR-2026</b>, Ottawa, Canada</p>
+      <h1>Amiras Rabari<span>Systems and software developer</span></h1>
+      <p class="lede">Electronics technician turned Computer Science student. I'm curious about what happens one layer down, so I learn systems by building them: a database from the disk page up, a query engine from the grammar up, firmware from the schematic up. Most days that means C and C++ close to the hardware, and backends in Java.</p>
+      <div class="actions">
+        <a class="btn" href="/projects/">See my projects</a>
+        <a class="btn ghost" href="/blog/">Read the blog</a>
+      </div>
+    </div>
+    <figure class="chip-fig">
+      {{die}}
+      <figcaption id="chip-cap" aria-live="polite">Hover or tap a block to see where I've used it.</figcaption>
+    </figure>
+  </section>
+
+  <div class="status">
+    <div><span class="k">Currently</span><span class="v"><span class="led" aria-hidden="true"></span>IT Support Technician, Carleton University</span></div>
+    <div><span class="k">Studying</span><span class="v">BCS Honours, AI &amp; ML stream, Year 3</span></div>
+    <div><span class="k">Looking for</span><span class="v">Co-op in systems, firmware or backend</span></div>
+  </div>
+
+  <section class="block">
+    <div class="sec-head">
+      <div><h2>Featured projects</h2><p>Each one built to understand a system from the inside.</p></div>
+      <a class="more" href="/projects/">All projects</a>
+    </div>
+    <div class="specs">
+      <article class="spec">
+        <header><h3><a href="/projects/database-from-scratch/">Database from scratch</a></h3><p>A relational database in C++ with its own storage engine, SQL parser and cost-based optimizer. Verified against PostgreSQL.</p></header>
+        <table><tbody>
+          <tr><td>Min. memory budget</td><td>4 pages</td></tr>
+          <tr><td>Join algorithms</td><td>Nested loop, sort-merge, Grace hash</td></tr>
+          <tr><td>Optimizer</td><td>Selinger DP, up to 6 tables</td></tr>
+          <tr><td>Buffer pool</td><td>LRU / CLOCK</td></tr>
+        </tbody></table>
+        <div class="foot"><span class="stack">C++  SQL  GDB</span><a href="https://github.com/amiras-rabari/Database-Management-System">View code</a></div>
+      </article>
+      <article class="spec">
+        <header><h3><a href="/projects/cinesmart/">CineSmart</a></h3><p>Movie discovery with search, watchlists and recommendations, fed by a daily ETL pipeline.</p></header>
+        <table><tbody>
+          <tr><td>REST endpoints</td><td>36</td></tr>
+          <tr><td>Database schema</td><td>16 tables</td></tr>
+          <tr><td>Data sources</td><td>3 movie APIs</td></tr>
+          <tr><td>Auth</td><td>JWT, rotating refresh tokens</td></tr>
+        </tbody></table>
+        <div class="foot"><span class="stack">Java  Spring Boot  React</span><a href="https://github.com/amiras-rabari/CineSmart">View code</a></div>
+      </article>
+      <article class="spec">
+        <header><h3><a href="/projects/query-engine/">Relational algebra query engine</a></h3><p>Hand-written lexer, parser and semantic analyzer with line and column error messages.</p></header>
+        <table><tbody>
+          <tr><td>Operators</td><td>8</td></tr>
+          <tr><td>Largest join benchmark</td><td>64,000 × 64,000</td></tr>
+          <tr><td>Measured growth</td><td>log-log slope 2.05</td></tr>
+          <tr><td>Parser</td><td>Recursive descent, LL(2)</td></tr>
+        </tbody></table>
+        <div class="foot"><span class="stack">C++17  Make  Linux</span><a href="https://github.com/amiras-rabari/Relational-Algebra-Query-Engine">View code</a></div>
+      </article>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="sec-head">
+      <div><h2>Latest application notes</h2><p>From the blog.</p></div>
+      <a class="more" href="/blog/">All posts</a>
+    </div>
+    {{latest_posts}}
+  </section>
+</div>

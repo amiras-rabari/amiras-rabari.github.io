@@ -1,0 +1,52 @@
+---
+title: IoT flood detection system
+description: A real-time flood monitoring system on an ATmega328P with interrupt-driven C firmware, ESP8266 Wi-Fi alerts and a custom PCB.
+path: /projects/flood-detection/
+nav: projects
+---
+<div class="wrap">
+  <header class="page-head">
+    <a class="crumbs" href="/projects/">All projects</a>
+    <p class="part" style="margin-top:1rem">Embedded, <b>hardware and firmware</b></p>
+    <h1>IoT flood detection system</h1>
+    <p class="lede">A board that watches water level, flow and humidity, sounds an alarm locally and sends an alert to your phone. My capstone project at Seneca College, from schematic to firmware.</p>
+    <div class="actions">
+      <a class="btn" href="https://youtu.be/IZVYEoIeTVI">Watch the demo video</a>
+    </div>
+  </header>
+
+  <div class="detail">
+    <div class="prose">
+      <h2>Block diagram</h2>
+      <ol class="flow">
+        <li class="data"><b>Sensors</b><span>Ultrasonic water-level sensor, float switch, Hall-effect flow sensor and a DHT11 for temperature and humidity.</span></li>
+        <li><b>ATmega328P firmware</b><span>Embedded C with non-blocking acquisition: interrupt-driven pulse counting for flow, pulse timing for the ultrasonic sensor, and the DHT11's single-wire protocol.</span></li>
+        <li><b>Local output</b><span>A 20×4 LCD readout and a buzzer alarm.</span></li>
+        <li><b>ESP8266 Wi-Fi</b><span>AT commands over UART and HTTP GET requests to a cloud dashboard, which sends the phone alert.</span></li>
+      </ol>
+
+      <h2>Hardware</h2>
+      <p>I designed the schematic and the PCB layout, then assembled and debugged the board. It includes a regulated supply that steps 12 V down to 5 V and 3.3 V using a bridge rectifier, a 7805 and an LM1117.</p>
+      <p>The project shipped with a bill of materials (about $110 CAD) and a technical report covering specifications, theory of operation and maintenance.</p>
+
+      <h2>Demo</h2>
+      <p>There's no repository for this one. The <a href="https://youtu.be/IZVYEoIeTVI">video walkthrough</a> covers the whole build, from the sensors to the alert on the phone.</p>
+    </div>
+
+    <aside class="side">
+      <article class="spec">
+        <header><h3>Key specifications</h3></header>
+        <table><tbody>
+          <tr><td>MCU</td><td>ATmega328P</td></tr>
+          <tr><td>Wi-Fi</td><td>ESP8266, AT over UART</td></tr>
+          <tr><td>Sensors</td><td>4</td></tr>
+          <tr><td>Display</td><td>20×4 LCD</td></tr>
+          <tr><td>Power rails</td><td>12 V → 5 V → 3.3 V</td></tr>
+          <tr><td>Regulators</td><td>7805, LM1117</td></tr>
+          <tr><td>Bill of materials</td><td>≈ $110 CAD</td></tr>
+        </tbody></table>
+        <div class="foot"><span class="stack">Embedded C  Arduino  ESP8266  PCB design</span></div>
+      </article>
+    </aside>
+  </div>
+</div>

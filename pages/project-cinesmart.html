@@ -1,0 +1,63 @@
+---
+title: CineSmart
+description: CineSmart is a movie discovery platform for Canada with a Spring Boot API of 36 endpoints, a React and TypeScript front end, PostgreSQL, Redis and a Python ETL pipeline.
+path: /projects/cinesmart/
+nav: projects
+---
+<div class="wrap">
+  <header class="page-head">
+    <a class="crumbs" href="/projects/">All projects</a>
+    <p class="part" style="margin-top:1rem">Full stack, <b>Java and TypeScript</b></p>
+    <h1>CineSmart</h1>
+    <p class="lede">A movie discovery platform for Canada. It answers three questions: what should I watch, where can I watch it, and what have I already watched, liked or saved?</p>
+    <div class="actions">
+      <a class="btn" href="https://github.com/amiras-rabari/CineSmart">View code on GitHub</a>
+    </div>
+  </header>
+
+  <div class="detail">
+    <div class="prose">
+      <h2>System overview</h2>
+      <ol class="flow">
+        <li><b>React single-page app</b><span>React 19 and TypeScript. TanStack Query handles server state, with optimistic updates that roll back on failure.</span></li>
+        <li><b>Spring Boot API</b><span>36 REST endpoints under /api/v1. Bearer access token plus an HttpOnly refresh cookie.</span></li>
+        <li class="data"><b>PostgreSQL and Redis</b><span>PostgreSQL holds the 16-table catalog and user activity. Redis holds short-lived security state: sessions, token blacklists and counters.</span></li>
+        <li><b>Python ETL pipeline</b><span>Pulls from OMDb, TMDB and Watchmode, then validates, cleans and deduplicates into the catalog. Trending titles refresh daily.</span></li>
+      </ol>
+
+      <h2>The backend</h2>
+      <p>The API is a modular monolith of about 5,200 lines across seven feature modules: identity, catalog, discovery, activity, recommendation, analytics and shared. Each module is split into api, application, domain and persistence layers.</p>
+      <p>Module dependencies stay acyclic through dependency inversion. For example, the catalog needs per-user flags that live in activity, so the interface lives in the shared module and activity implements it.</p>
+
+      <h2>Session security</h2>
+      <ul>
+        <li><strong>Two tokens.</strong> A 15-minute JWT access token held only in memory, and a random 256-bit refresh token in an HttpOnly, Secure, SameSite=Strict cookie.</li>
+        <li><strong>Rotation with reuse detection.</strong> Each refresh consumes the token atomically and issues a new one. If an old token shows up again, the system treats it as theft and revokes every session for that user.</li>
+        <li><strong>Login hardening.</strong> Unknown usernames still run a dummy BCrypt check, so response timing doesn't reveal which accounts exist. Five failures lock a user for an hour.</li>
+        <li><strong>Atomic counters.</strong> Rate limits and lockouts use Redis Lua scripts, so a crash can't leave a counter without an expiry. Behavior during a Redis outage is tested both fail-open and fail-closed.</li>
+      </ul>
+
+      <h2>Search and recommendations</h2>
+      <p>Typo-tolerant search over titles and people uses PostgreSQL <code>pg_trgm</code> trigram indexes with <code>word_similarity</code> ranking. The "For You" row is a content-based recommender that scores up to 300 candidates per user from their ratings, likes and watch history, and gives a reason for every pick.</p>
+
+      <h2>Testing</h2>
+      <p>Built test-first at every layer: JUnit with Testcontainers against real PostgreSQL and Redis, Vitest with MSW on the front end, and Playwright for end-to-end and accessibility checks.</p>
+    </div>
+
+    <aside class="side">
+      <article class="spec">
+        <header><h3>Key specifications</h3></header>
+        <table><tbody>
+          <tr><td>REST endpoints</td><td>36</td></tr>
+          <tr><td>Feature modules</td><td>7</td></tr>
+          <tr><td>Database schema</td><td>16 tables</td></tr>
+          <tr><td>Data sources</td><td>3 movie APIs</td></tr>
+          <tr><td>Candidates scored</td><td>300 per user</td></tr>
+          <tr><td>Access token life</td><td>15 min</td></tr>
+          <tr><td>Session limits</td><td>2 h idle, 7 days max</td></tr>
+        </tbody></table>
+        <div class="foot"><span class="stack">Java  Spring Boot  React  TypeScript  PostgreSQL  Redis  Python  Docker</span></div>
+      </article>
+    </aside>
+  </div>
+</div>

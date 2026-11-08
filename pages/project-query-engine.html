@@ -1,0 +1,60 @@
+---
+title: Relational algebra query engine
+description: A relational algebra interpreter in C++17 with a hand-written lexer, recursive-descent parser, semantic analyzer and tree-walking executor, benchmarked to 64,000 by 64,000 tuple joins.
+path: /projects/query-engine/
+nav: projects
+---
+<div class="wrap">
+  <header class="page-head">
+    <a class="crumbs" href="/projects/">All projects</a>
+    <p class="part" style="margin-top:1rem">Compilers, <b>C++17</b></p>
+    <h1>Relational algebra query engine</h1>
+    <p class="lede">An interpreter that reads relation definitions and one query, checks that the query is valid, and evaluates it in memory. It can also print the parse tree without running anything.</p>
+    <div class="actions">
+      <a class="btn" href="https://github.com/amiras-rabari/Relational-Algebra-Query-Engine">View code on GitHub</a>
+    </div>
+  </header>
+
+  <div class="detail">
+    <div class="prose">
+      <h2>A multi-pass pipeline</h2>
+      <ol class="flow">
+        <li class="data"><b>Input text</b><span>Relation definitions, then exactly one query.</span></li>
+        <li><b>Tokenizer</b><span>A modal lexer with maximal munch, escape decoding and line and column tracking.</span></li>
+        <li><b>Parser</b><span>Recursive descent. The grammar's shape encodes operator precedence and left associativity. LL(2) lookahead separates relation data from the query without backtracking.</span></li>
+        <li><b>Semantic analyzer</b><span>A schema catalog, column type inference, name resolution with ambiguity detection, and union-compatibility checks. Invalid queries are rejected before anything runs.</span></li>
+        <li><b>Executor</b><span>Walks the AST and evaluates 8 operators: select, project, rename, union, minus, intersect, times and theta join.</span></li>
+      </ol>
+
+      <h2>Design decisions</h2>
+      <ul>
+        <li><strong>Memory safety.</strong> The AST is polymorphic with <code>std::unique_ptr</code> ownership and RAII, so a thrown error unwinds without leaking memory.</li>
+        <li><strong>Cheaper joins.</strong> Join conditions are evaluated before building the combined tuple, so non-matching pairs are never allocated. Cartesian products are guarded by an overflow-safe size check.</li>
+        <li><strong>Set semantics.</strong> Relational algebra works on sets, so duplicates are removed at load, projection and union.</li>
+        <li><strong>One class per pass.</strong> Each stage has typed boundaries, and an AST-printing mode makes tree shapes easy to verify.</li>
+      </ul>
+
+      <h2>Measuring the join</h2>
+      <p>A seeded data generator and machine-independent work counters benchmarked the nested-loop join up to 64,000 × 64,000 tuples. The counters matched n × m exactly, and the log-log slope of 2.05 confirmed quadratic growth.</p>
+
+      <h2>A bug worth remembering</h2>
+      <p>In a join, <code>S.b</code> was resolving to <code>R.b</code>. The fix was to carry fully qualified <code>Relation.attr</code> names all the way through execution instead of dropping the qualifier after parsing.</p>
+    </div>
+
+    <aside class="side">
+      <article class="spec">
+        <header><h3>Key specifications</h3></header>
+        <table><tbody>
+          <tr><td>Language</td><td>C++17</td></tr>
+          <tr><td>Operators</td><td>8</td></tr>
+          <tr><td>Parser</td><td>Recursive descent, LL(2)</td></tr>
+          <tr><td>Largest benchmark</td><td>64,000 × 64,000</td></tr>
+          <tr><td>Measured growth</td><td>log-log slope 2.05</td></tr>
+          <tr><td>Build</td><td>GNU Make, -Wall -Wextra</td></tr>
+          <tr><td>Docs</td><td>EBNF grammar, perf report</td></tr>
+        </tbody></table>
+        <div class="foot"><span class="stack">C++17  STL  Make  GDB  Linux</span></div>
+      </article>
+    </aside>
+  </div>
+</div>

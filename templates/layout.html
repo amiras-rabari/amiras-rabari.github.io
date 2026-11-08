@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>{{page_title}}</title>
+  <meta name="description" content="{{description}}">
+  <link rel="canonical" href="{{canonical}}">
+  <meta property="og:type" content="{{og_type}}">
+  <meta property="og:site_name" content="{{site_name}}">
+  <meta property="og:title" content="{{og_title}}">
+  <meta property="og:description" content="{{description}}">
+  <meta property="og:url" content="{{canonical}}">
+  <meta property="og:image" content="{{og_image}}">
+  <meta name="twitter:card" content="summary_large_image">
+  {{extra_head}}
+  <link rel="alternate" type="application/rss+xml" title="{{site_name}} blog" href="/feed.xml">
+  <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
+  <script>
+    try { var t = localStorage.getItem('theme'); if (t) document.documentElement.setAttribute('data-theme', t); } catch (e) {}
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..800&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+  <link rel="stylesheet" href="/assets/css/site.css?v={{build_id}}">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="top">
+    <div class="wrap top-inner">
+      <a class="mark" href="/">Amiras Rabari<i>.</i></a>
+      <button class="menu-btn" id="menu-btn" type="button" aria-expanded="false" aria-controls="site-nav">Menu</button>
+      <nav id="site-nav" aria-label="Main">
+        <a href="/projects/"{{active:projects}}>Projects</a>
+        <a href="/experience/"{{active:experience}}>Experience</a>
+        <a href="/education/"{{active:education}}>Education</a>
+        <a href="/blog/"{{active:blog}}>Blog</a>
+        <a href="/about/"{{active:about}}>About</a>
+        <a class="resume-link" href="{{resume}}" download>Resume</a>
+        <button class="theme-btn" id="theme-toggle" type="button" aria-label="Switch color theme">Dark</button>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+{{content}}
+  </main>
+
+  <footer class="site-footer" id="contact">
+    <div class="wrap">
+      <div class="contact">
+        <div><span class="k">Email</span><span class="v" id="email-text">{{email}}</span><button class="copy" type="button" data-copy="email-text">Copy</button></div>
+        <div><span class="k">LinkedIn</span><a class="v" href="{{linkedin}}">in/amiras-rabari</a></div>
+        <div><span class="k">GitHub</span><a class="v" href="{{github}}">amiras-rabari</a></div>
+        <div><span class="k">Resume</span><a class="v" href="{{resume}}" download>Download PDF</a></div>
+      </div>
+      <div class="foot-meta">
+        <span>AR-2026, Ottawa, Canada</span>
+        <span>Hand-built with HTML, CSS and JavaScript. <a href="/feed.xml">RSS</a></span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="/assets/js/site.js?v={{build_id}}" defer></script>
+  <script data-goatcounter="{{goatcounter}}" async src="//gc.zgo.at/count.js"></script>
+</body>
+</html>

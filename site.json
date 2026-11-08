@@ -1,0 +1,83 @@
+{
+  "url": "https://amiras-rabari.github.io",
+  "name": "Amiras Rabari",
+  "description": "Amiras Rabari is a Computer Science student at Carleton University building systems software in C, C++ and Java: a database from scratch, a query engine and embedded firmware.",
+  "goatcounter": "https://amiras-rabari.goatcounter.com/count",
+  "email": "amirasrabari8@gmail.com",
+  "linkedin": "https://www.linkedin.com/in/amiras-rabari",
+  "github": "https://github.com/amiras-rabari",
+  "resume": "/assets/Amiras_Rabari_Resume.pdf",
+  "ogImage": "/assets/img/headshot.jpg",
+  "die": [
+    {
+      "id": "c0",
+      "label": "Core 0",
+      "name": "Systems",
+      "skills": [
+        "C",
+        "C++20",
+        "Linux"
+      ],
+      "use": "the database from scratch, the query engine and Systems Programming in C"
+    },
+    {
+      "id": "c1",
+      "label": "Core 1",
+      "name": "Backend",
+      "skills": [
+        "Java",
+        "Spring Boot",
+        "React, TypeScript"
+      ],
+      "use": "CineSmart's Spring Boot API and React front end"
+    },
+    {
+      "id": "npu",
+      "label": "NPU",
+      "name": "AI / ML",
+      "skills": [
+        "Python",
+        "Linear algebra"
+      ],
+      "use": "my AI and Machine Learning stream at Carleton. This block is still being built",
+      "status": "In progress"
+    },
+    {
+      "id": "l2",
+      "label": "L2 cache",
+      "name": "Data",
+      "skills": [
+        "PostgreSQL",
+        "Redis",
+        "SQL",
+        "MongoDB"
+      ],
+      "use": "CineSmart's 16-table schema and the database built from scratch"
+    },
+    {
+      "id": "mc",
+      "label": "Memory controller",
+      "name": "Tooling",
+      "skills": [
+        "Git",
+        "GDB",
+        "Make",
+        "Docker",
+        "Maven"
+      ],
+      "use": "every project, from debugging the query engine to running CineSmart locally"
+    },
+    {
+      "id": "io",
+      "label": "I/O",
+      "name": "Embedded",
+      "skills": [
+        "ATmega328P",
+        "ESP8266",
+        "UART, SPI, I2C",
+        "PCB design"
+      ],
+      "use": "the flood detection system's firmware and custom PCB"
+    }
+  ]
+}

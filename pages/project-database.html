@@ -1,0 +1,65 @@
+---
+title: Database from scratch
+description: A relational database engine in C++20, built from the disk page up: hand-written SQL parser, cost-based optimizer, iterator execution engine and a buffer pool, all under a hard memory budget.
+path: /projects/database-from-scratch/
+nav: projects
+---
+<div class="wrap">
+  <header class="page-head">
+    <a class="crumbs" href="/projects/">All projects</a>
+    <p class="part" style="margin-top:1rem">Systems, <b>C++20</b></p>
+    <h1>Database from scratch</h1>
+    <p class="lede">SQL goes in and rows come out. Everything in between is built by hand: the parser, the optimizer, the execution engine and the storage layer. No database libraries, parser generators or regular expressions.</p>
+    <div class="actions">
+      <a class="btn" href="https://github.com/amiras-rabari/Database-Management-System">View code on GitHub</a>
+    </div>
+  </header>
+
+  <div class="detail">
+    <div class="prose">
+      <h2>How a query flows through it</h2>
+      <ol class="flow">
+        <li class="data"><b>SQL text</b><span>SELECT, JOIN, GROUP BY, ORDER BY, subqueries in FROM, UNION and friends.</span></li>
+        <li><b>sql</b><span>Hand-written lexer and recursive-descent parser, then name resolution and type checks. Errors point to the exact line and column.</span></li>
+        <li class="data"><b>Logical plan (JSON)</b><span>A tree of relational operators, the contract between modules.</span></li>
+        <li><b>opt</b><span>Statistics with equi-depth histograms, selectivity estimates, seven rewrite rules, an I/O cost model and Selinger-style dynamic programming over join orders.</span></li>
+        <li class="data"><b>Physical plan (JSON)</b><span>Concrete algorithms chosen for the memory budget, such as hash join or sort-merge join.</span></li>
+        <li><b>exec</b><span>Volcano-style open / next / close iterators: scans, filters, external sort, three joins, hash aggregation and set operations.</span></li>
+        <li><b>storage</b><span>A buffer pool with LRU and CLOCK replacement over heap files of slotted 4 KB pages on disk.</span></li>
+      </ol>
+
+      <h2>The constraint that shapes everything</h2>
+      <p>The whole engine runs under a hard memory budget of B pages, as small as 4. At most B pages are in memory at any moment, including tuples held in C++ containers. Sort, hash and join operators spill to temporary files instead of growing.</p>
+      <p>Every operator also reports deterministic I/O counters. The same data, plan and budget produce identical counts on every run, and those counts are checked against the textbook cost formulas, such as <code>3(M+N)</code> for Grace hash join.</p>
+
+      <h2>Hard problems</h2>
+      <ul>
+        <li><strong>Making leaks impossible.</strong> Page pins, frame reservations, temp files and parser depth are owned by small move-only RAII guards. An early return or exception can't leave a page pinned. Tests assert zero pinned frames and zero live temp files after every plan.</li>
+        <li><strong>Surviving hostile input.</strong> A query nested 1,000 levels deep has to produce an error, not a stack overflow, in every later pass too. One shared tree-height budget, enforced while parsing, solved it.</li>
+        <li><strong>I/O you can account for.</strong> Each operator snapshots the buffer pool's counters, so <code>EXPLAIN ANALYZE</code> shows where the I/O went at every node and how far off the optimizer's estimate was.</li>
+        <li><strong>Cost model and executor agree.</strong> The optimizer's formulas and the executor's real counters are tested against each other. Any mismatch is treated as a bug in one of them.</li>
+        <li><strong>SQL semantics that look right but aren't.</strong> SQL works on bags, not sets. <code>GROUP BY</code> with no keys over an empty table returns exactly one row. The engine gets these cases right, and results are compared with PostgreSQL.</li>
+      </ul>
+
+      <h2>Architecture</h2>
+      <p>Five libraries with a strict one-way dependency graph: <code>common</code>, <code>storage</code>, <code>exec</code>, <code>sql</code> and <code>opt</code>. Each one works as a library and as its own command-line tool. A final shell wires them together without rewriting any of them, and supports <code>CREATE</code>, <code>INSERT</code>, <code>LOAD</code>, <code>ANALYZE</code>, <code>EXPLAIN</code> and <code>EXPLAIN ANALYZE</code>.</p>
+    </div>
+
+    <aside class="side">
+      <article class="spec">
+        <header><h3>Key specifications</h3></header>
+        <table><tbody>
+          <tr><td>Language</td><td>C++20</td></tr>
+          <tr><td>Min. memory budget</td><td>4 pages</td></tr>
+          <tr><td>Page size</td><td>4 KB, slotted</td></tr>
+          <tr><td>Buffer pool</td><td>LRU / CLOCK</td></tr>
+          <tr><td>Joins</td><td>Block nested loop, sort-merge, Grace hash</td></tr>
+          <tr><td>Optimizer</td><td>Selinger DP, up to 6 tables</td></tr>
+          <tr><td>Rewrite rules</td><td>7</td></tr>
+          <tr><td>Verified against</td><td>PostgreSQL</td></tr>
+        </tbody></table>
+        <div class="foot"><span class="stack">C++  SQL  JSON  GDB</span></div>
+      </article>
+    </aside>
+  </div>
+</div>
