@@ -4,7 +4,7 @@
    Previous blueprint design: git tag design-blueprint-v1 */
 
 :root {
-  --sheet: #F5F5F7;
+  --sheet: #F2F5FB;
   --panel: #FFFFFF;
   --ink: #1D1D1F;
   --muted: #6E6E73;
@@ -24,13 +24,13 @@
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --sheet: #000000; --panel: #141416; --ink: #F5F5F7; --muted: #A1A1A6;
+    --sheet: #020308; --panel: #12141A; --ink: #F5F5F7; --muted: #A1A1A6;
     --line: #2A2A2E; --grid: #1C1C1F; --signal: #2997FF; --signal-ink: #000000;
     --code-bg: #0E0E10; --shadow: 0 0 0 1px rgba(255,255,255,.02); color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --sheet: #000000; --panel: #141416; --ink: #F5F5F7; --muted: #A1A1A6;
+  --sheet: #020308; --panel: #12141A; --ink: #F5F5F7; --muted: #A1A1A6;
   --line: #2A2A2E; --grid: #1C1C1F; --signal: #2997FF; --signal-ink: #000000;
   --code-bg: #0E0E10; --shadow: 0 0 0 1px rgba(255,255,255,.02); color-scheme: dark;
 }
@@ -485,3 +485,20 @@ section.block { border-top: none; }
 .foot-meta a { color: var(--muted); }
 .hljs-keyword, .hljs-selector-tag, .hljs-built_in, .hljs-type { color: color-mix(in srgb, var(--ink) 20%, #BF5AF2); }
 .hljs-number, .hljs-literal { color: var(--signal); }
+
+/* ---------- Aurora wash: color lives at the top of every page and fades out before the reading area ---------- */
+:root { --aurora-a: rgba(41,151,255,.30); --aurora-b: rgba(160,100,255,.24); --aurora-c: rgba(255,94,138,.18); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --aurora-a: rgba(41,151,255,.30); --aurora-b: rgba(150,90,255,.28); --aurora-c: rgba(255,70,130,.16); } }
+:root[data-theme="dark"] { --aurora-a: rgba(41,151,255,.30); --aurora-b: rgba(150,90,255,.28); --aurora-c: rgba(255,70,130,.16); }
+main { position: relative; isolation: isolate; }
+main::before {
+  content: ""; position: absolute; z-index: -1; left: 0; right: 0; top: -80px; height: min(1000px, 120vh);
+  pointer-events: none;
+  background:
+    radial-gradient(42% 55% at 12% 18%, var(--aurora-a), transparent 70%),
+    radial-gradient(38% 50% at 52% 4%, var(--aurora-b), transparent 70%),
+    radial-gradient(36% 48% at 92% 22%, var(--aurora-c), transparent 70%);
+  -webkit-mask-image: linear-gradient(to bottom, #000 35%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 35%, transparent 100%);
+}
+html { background: var(--sheet); }
