@@ -603,3 +603,6 @@ html { background: var(--sheet); }
   .contact > div, .contact > div:nth-child(2) { border-right: none; border-bottom: 1px solid var(--line); }
   .contact > div:last-child { border-bottom: none; }
 }
+
+/* Jump target for "Contact me": clear the sticky header */
+#contact { scroll-margin-top: 5rem; }
