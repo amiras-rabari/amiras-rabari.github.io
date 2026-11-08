@@ -24,6 +24,15 @@ function rebuild() {
 rebuild();
 
 http.createServer((req, res) => {
+  try { handle(req, res); }
+  catch (e) {
+    // Usually a request that arrived mid-rebuild, while _site/ was being rewritten
+    if (!res.headersSent) res.writeHead(503, { 'Content-Type': 'text/plain', 'Retry-After': '1' });
+    res.end('Rebuilding, refresh in a moment.');
+  }
+}).listen(PORT, () => console.log(`Preview at http://localhost:${PORT}  (Ctrl+C to stop)`));
+
+function handle(req, res) {
   let p = decodeURIComponent(new URL(req.url, 'http://x').pathname);
   let file = path.join(OUT, p);
   if (!file.startsWith(OUT)) { res.writeHead(403); return res.end(); }
@@ -36,8 +45,8 @@ http.createServer((req, res) => {
     return res.end(fs.readFileSync(path.join(OUT, '404.html')));
   }
   res.writeHead(200, { 'Content-Type': TYPES[path.extname(file).toLowerCase()] || 'application/octet-stream', 'Cache-Control': 'no-store' });
-  fs.createReadStream(file).pipe(res);
-}).listen(PORT, () => console.log(`Preview at http://localhost:${PORT}  (Ctrl+C to stop)`));
+  fs.createReadStream(file).on('error', () => res.end()).pipe(res);
+}
 
 let timer;
 for (const dir of ['pages', 'posts', 'templates', 'assets']) {
