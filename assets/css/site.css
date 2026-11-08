@@ -606,3 +606,16 @@ html { background: var(--sheet); }
 
 /* Jump target for "Contact me": clear the sticky header */
 #contact { scroll-margin-top: 5rem; }
+
+/* ---------- Bigger, more noticeable footer ---------- */
+.site-footer .wrap { padding-block: clamp(3rem, 7vw, 4.5rem) 2.5rem; }
+.foot-head { margin-bottom: 1.5rem; }
+.foot-head h2 { font-family: var(--display); font-weight: 800; font-size: clamp(1.8rem, 4vw, 2.6rem); letter-spacing: -0.035em; line-height: 1.05; margin: 0; }
+.foot-head p { margin: 0.6rem 0 0; color: var(--muted); font-size: 1.08rem; max-width: 64rem; text-wrap: pretty; }
+.contact > div { padding: 1.35rem 1.5rem 1.45rem; }
+.contact .k { font-size: 0.88rem; margin-bottom: 0.35rem; }
+.contact .v { font-size: 1.02rem; font-weight: 500; }
+.contact .email-row .copy { font-size: 0.82rem; padding: 0.2rem 0.75rem; }
+.contact { transition: box-shadow 400ms ease; }
+.contact.flash { box-shadow: 0 0 0 3px color-mix(in srgb, var(--signal) 45%, transparent), var(--shadow); }
+.foot-meta { margin-top: 1.75rem; }

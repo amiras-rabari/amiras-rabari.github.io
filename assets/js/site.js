@@ -66,6 +66,23 @@
     blk.addEventListener('click', on);
   });
 
+  // "Contact me" links: bring the contact footer to the middle of the screen and briefly highlight it
+  var footer = document.getElementById('contact');
+  if (footer) {
+    document.querySelectorAll('a[href="#contact"]').forEach(function (a) {
+      a.addEventListener('click', function (e) {
+        e.preventDefault();
+        var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        footer.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'center' });
+        history.replaceState(null, '', '#contact');
+        var box = footer.querySelector('.contact');
+        if (box) { box.classList.add('flash'); setTimeout(function () { box.classList.remove('flash'); }, 1600); }
+        var mail = document.getElementById('email-text');
+        if (mail) setTimeout(function () { mail.focus({ preventScroll: true }); }, reduce ? 0 : 500);
+      });
+    });
+  }
+
   // Blog tag filter
   var filters = document.querySelector('.filters');
   if (filters) {
