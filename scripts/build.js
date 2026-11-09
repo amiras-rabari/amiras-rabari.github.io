@@ -10,6 +10,7 @@ import { fileURLToPath } from 'node:url';
 import { Marked } from 'marked';
 import { markedHighlight } from 'marked-highlight';
 import hljs from 'highlight.js';
+import katex from 'katex';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = path.join(ROOT, '_site');
@@ -46,7 +47,7 @@ export function build() {
   }
 
   // ---------- Page rendering ----------
-  function render({ title, description, urlPath, nav, content, ogType = 'website', ogImage, noindex = false, fullTitle = false }) {
+  function render({ title, description, urlPath, nav, content, ogType = 'website', ogImage, noindex = false, fullTitle = false, math = false }) {
     const pageTitle = fullTitle ? title : `${title} | ${site.name}`;
     const vars = {
       page_title: esc(pageTitle),
@@ -56,7 +57,8 @@ export function build() {
       og_type: ogType,
       og_image: site.url + (ogImage || site.ogImage),
       site_name: esc(site.name),
-      extra_head: noindex ? '<meta name="robots" content="noindex">' : '',
+      extra_head: (noindex ? '<meta name="robots" content="noindex">' : '') +
+        (math ? `<link rel="stylesheet" href="/assets/katex/katex.min.css?v=${buildId}">` : ''),
       email: esc(site.email),
       linkedin: site.linkedin,
       github: site.github,
@@ -102,6 +104,32 @@ export function build() {
       },
     })
   );
+  // Math: $$...$$ = display block, $...$ = inline. Rendered to HTML at build time by KaTeX,
+  // so no math script runs in the browser; posts with math link the self-hosted KaTeX stylesheet.
+  const tex = (src, displayMode) => katex.renderToString(src, { displayMode, throwOnError: false, output: 'htmlAndMathml' });
+  marked.use({
+    extensions: [
+      {
+        name: 'mathBlock', level: 'block',
+        start: (src) => src.match(/^\$\$/m)?.index,
+        tokenizer(src) {
+          const m = /^\$\$([\s\S]+?)\$\$[ \t]*(?:\n+|$)/.exec(src);
+          if (m) return { type: 'mathBlock', raw: m[0], text: m[1].trim() };
+        },
+        renderer: (t) => `<div class="math-block">${tex(t.text, true)}</div>\n`,
+      },
+      {
+        name: 'mathInline', level: 'inline',
+        start: (src) => { const i = src.indexOf('$'); return i < 0 ? undefined : i; },
+        tokenizer(src) {
+          // $...$ with no space just inside the dollars, and not followed by a digit (so "$5 and $10" stays text)
+          const m = /^\$(?!\s)((?:\\.|[^\\$\n])+?)(?<!\s)\$(?!\d)/.exec(src);
+          if (m) return { type: 'mathInline', raw: m[0], text: m[1] };
+        },
+        renderer: (t) => `<span class="math">${tex(t.text, false)}</span>`,
+      },
+    ],
+  });
   // Wrap tables so they scroll sideways on phones instead of widening the page
   const toHtml = (md) => marked.parse(md)
     .replace(/<table>/g, '<div class="table-scroll"><table>')
@@ -123,6 +151,7 @@ export function build() {
         url: `/blog/${slug}/`,
         minutes: Math.max(1, Math.round(words / 220)),
         html: toHtml(body),
+        math: /\$/.test(body.replace(/```[\s\S]*?```/g, '')),
         draft: data.draft === true,
       };
     })
@@ -146,6 +175,11 @@ export function build() {
   fs.rmSync(OUT, { recursive: true, force: true });
   fs.mkdirSync(OUT, { recursive: true });
   fs.cpSync(path.join(ROOT, 'assets'), path.join(OUT, 'assets'), { recursive: true });
+  // KaTeX stylesheet + fonts, self-hosted (linked only from posts that contain math)
+  const katexDist = path.join(ROOT, 'node_modules', 'katex', 'dist');
+  fs.mkdirSync(path.join(OUT, 'assets', 'katex'), { recursive: true });
+  fs.copyFileSync(path.join(katexDist, 'katex.min.css'), path.join(OUT, 'assets', 'katex', 'katex.min.css'));
+  fs.cpSync(path.join(katexDist, 'fonts'), path.join(OUT, 'assets', 'katex', 'fonts'), { recursive: true });
   fs.writeFileSync(path.join(OUT, '.nojekyll'), '');
   if (fs.existsSync(path.join(ROOT, 'CNAME'))) fs.copyFileSync(path.join(ROOT, 'CNAME'), path.join(OUT, 'CNAME'));
 
@@ -208,7 +242,7 @@ ${p.html}
 </div>`;
     writeOut(p.url, render({
       title: p.title, description: p.summary, urlPath: p.url, nav: 'blog', content,
-      ogType: 'article', ogImage: p.cover, noindex: p.draft,
+      ogType: 'article', ogImage: p.cover, noindex: p.draft, math: p.math,
     }));
     if (!p.draft) sitemap.push(p.url);
   });

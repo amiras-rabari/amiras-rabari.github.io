@@ -619,3 +619,34 @@ html { background: var(--sheet); }
 .contact { transition: box-shadow 400ms ease; }
 .contact.flash { box-shadow: 0 0 0 3px color-mix(in srgb, var(--signal) 45%, transparent), var(--shadow); }
 .foot-meta { margin-top: 1.75rem; }
+
+/* ---------- Math in posts (KaTeX, rendered at build time) ----------
+   Display formulas sit in their own tinted panel, like a spec callout;
+   inline math gets a light tint so it reads as distinct from prose and from code. */
+.prose .math-block {
+  position: relative;
+  margin-top: 1.5em;
+  padding: 1.15rem 1.4rem;
+  background: color-mix(in srgb, var(--signal) 6%, var(--code-bg));
+  border: 1px solid color-mix(in srgb, var(--signal) 22%, var(--line));
+  border-radius: var(--radius-sm, 12px);
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+.prose .math-block::before {
+  content: "";
+  position: absolute; inset: 0 auto 0 0; width: 3px;
+  background: var(--grad, var(--signal));
+}
+.prose .math-block .katex-display { margin: 0; }
+.prose .math-block .katex { font-size: 1.18em; color: var(--ink); }
+.prose .math .katex {
+  font-size: 1.04em;
+  color: color-mix(in srgb, var(--signal) 55%, var(--ink));
+  background: color-mix(in srgb, var(--signal) 8%, transparent);
+  padding: 0.05em 0.3em;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+.prose h2 .math .katex, .prose h3 .math .katex { background: none; padding: 0; color: inherit; }
+.prose table .math .katex { font-size: 1em; }

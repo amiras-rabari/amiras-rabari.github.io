@@ -1,7 +1,6 @@
 ---
 title: "Building a Database Engine from Scratch: Block Nested Loop, Grace Hash, and Sort-Merge Joins"
 date: 2026-10-15
-draft: true
 tags: [databases, cpp, systems]
 summary: How I designed and built three join algorithms for my C++ database engine, and how each one stays inside a fixed memory budget.
 ---
@@ -221,7 +220,7 @@ When iterating through multiple matching left tuples, `rewindGroup()` simply res
 | Feature / Metric | Block Nested Loop Join (BNLJ) | Grace Hash Join | Sort-Merge Join (SMJ) |
 | :--- | :--- | :--- | :--- |
 | **Supported Predicates** | Any Predicate (`=`, `<`, `>`, `!=`) | Equi-joins only (`=`) | Equi-joins & range bounds |
-| **Time Complexity** | $O(|R| \cdot |S|)$ comparisons | $O(\|R\| + \|S\|)$ average | $O(\|R\| \log \|R\| + \|S\| \log \|S\|)$ |
+| **Time Complexity** | $O(\|R\| \cdot \|S\|)$ comparisons | $O(\|R\| + \|S\|)$ average | $O(\|R\| \log \|R\| + \|S\| \log \|S\|)$ |
 | **Disk I/O Complexity** | $M + \lceil M / (B-2) \rceil \cdot N$ | $3(M + N)$ | $2M(1 + \lceil \log_{B-1} \frac{M}{B} \rceil) + 2N(1 + \dots)$ |
 | **Memory Overflow Strategy** | Fits fixed $B-2$ frame limit | Block BNLJ fallback per partition | Spills duplicate group run to disk |
 | **Output Ordering** | Preserves Outer ($R$) order | Unordered (Hash bucket order) | Strictly sorted by Join Keys |
