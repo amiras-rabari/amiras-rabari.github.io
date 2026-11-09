@@ -1,6 +1,6 @@
 ---
 title: "Mining Corporate Ruins: How Bankrupt Tech Data Is Fueling the Next Generation of AI"
-date: 2026-11-08
+date: 2026-10-01
 tags: [ai, llm, data-engineering, security]
 summary: Public web data is running out. How data from bankrupt tech companies could feed AI training, what it takes to clean it, and the privacy and security risks.
 ---
