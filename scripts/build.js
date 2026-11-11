@@ -146,7 +146,6 @@ export function build() {
       const words = body.replace(/```[\s\S]*?```/g, ' ').split(/\s+/).filter(Boolean).length;
       return {
         ...data,
-        tags: Array.isArray(data.tags) ? data.tags.map((t) => t.toLowerCase()) : data.tags ? [String(data.tags).toLowerCase()] : [],
         slug,
         url: `/blog/${slug}/`,
         minutes: Math.max(1, Math.round(words / 220)),
@@ -162,10 +161,10 @@ export function build() {
   const newestFirst = [...posts].reverse();
 
   const postItem = (p) => `
-      <li data-tags="${esc(p.tags.join(' '))}"><a href="${p.url}"><span class="an">${p.an}</span><span>
+      <li><a href="${p.url}"><span class="an">${p.an}</span><span>
         <span class="t">${esc(p.title)}${p.draft ? ' (draft)' : ''}</span>
         <span class="s">${esc(p.summary)}</span>
-        <span class="meta"><span>${fmtMonth(p.date)}</span><span>${p.minutes} min read</span>${p.tags.length ? `<span>${esc(p.tags.join(', '))}</span>` : ''}</span>
+        <span class="meta"><span>${fmtMonth(p.date)}</span><span>${p.minutes} min read</span></span>
       </span></a></li>`;
   const postList = (list) => list.length
     ? `<ul class="appnotes">${list.map(postItem).join('')}\n    </ul>`
@@ -198,10 +197,8 @@ export function build() {
   }
 
   // Blog index
-  const allTags = [...new Set(posts.flatMap((p) => p.tags))].sort();
-  const filters = allTags.length > 1
-    ? `<div class="filters" role="group" aria-label="Filter posts by tag"><button type="button" data-tag="all" aria-pressed="true">All</button>${allTags.map((t) => `<button type="button" data-tag="${esc(t)}" aria-pressed="false">${esc(t)}</button>`).join('')}</div>`
-    : '';
+  // No categories: posts have no tags, and the index shows a single "All" chip above the list.
+  const filters = `<div class="filters" role="group" aria-label="Posts"><button type="button" aria-pressed="true">All</button></div>`;
   writeOut('/blog/', render({
     title: 'Blog', urlPath: '/blog/', nav: 'blog',
     description: `Application notes by ${site.name}: write-ups of things I've built, fixed and learned.`,
@@ -221,7 +218,6 @@ export function build() {
   // Post pages
   posts.forEach((p, i) => {
     const prev = posts[i - 1], next = posts[i + 1];
-    const tagLinks = p.tags.map((t) => `<a class="tag" href="/blog/#${esc(t)}">${esc(t)}</a>`).join(' ');
     const content = `<div class="wrap">
   <article class="post">
     <a class="post-back" href="/blog/">All application notes</a>
@@ -229,7 +225,7 @@ export function build() {
       <p class="an">${p.an}</p>
       <h1>${esc(p.title)}</h1>
       <p class="summary">${esc(p.summary)}</p>
-      <div class="post-meta"><time datetime="${p.date}">${fmtDate(p.date)}</time><span>${p.minutes} min read</span>${tagLinks ? `<span>${tagLinks}</span>` : ''}</div>
+      <div class="post-meta"><time datetime="${p.date}">${fmtDate(p.date)}</time><span>${p.minutes} min read</span></div>
     </header>
     <div class="prose">
 ${p.html}

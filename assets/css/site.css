@@ -650,3 +650,11 @@ html { background: var(--sheet); }
 }
 .prose h2 .math .katex, .prose h3 .math .katex { background: none; padding: 0; color: inherit; }
 .prose table .math .katex { font-size: 1em; }
+
+/* Home project cards: "Spec sheet" and "View code" side by side in the footer */
+.spec .foot .links { display: inline-flex; gap: 1rem; margin-left: auto; }
+
+/* Home hero bio: tagline above the lede, co-op line below */
+.hero .tagline { font-family: var(--display); font-weight: 650; font-size: 1.22rem; line-height: 1.35; letter-spacing: -0.01em; max-width: 32rem; margin: 1.5rem 0 0; color: var(--ink); text-wrap: balance; }
+.hero .tagline + .lede { margin-top: 0.85rem; }
+.hero .seeking { font-family: var(--mono); font-size: 0.85rem; color: var(--signal); margin: 1rem 0 0; }

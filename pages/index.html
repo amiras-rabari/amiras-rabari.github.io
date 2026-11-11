@@ -8,7 +8,9 @@ nav: home
     <div>
       <p class="part">Part no. <b>AR-2026</b>, Ottawa, Canada</p>
       <h1>Amiras Rabari<span>Systems and Software Engineer</span></h1>
-      <p class="lede">Electronics technician turned Computer Science student. I'm curious about what happens one layer down, so I learn systems by building them: a database from the disk page up, a query engine from the grammar up, firmware from the schematic up. Most days that means C and C++ close to the hardware, and backends in Java. I'm available for co-op terms from 4 to 16 months.</p>
+      <p class="tagline">I don’t just rely on abstractions, I engineer them to understand how they work.</p>
+      <p class="lede">Electronics technician turned Computer Science student with a relentless focus on systems. Curious about what happens beneath the surface, I learn by building: relational database engines from the disk page up, recursive-descent parsers from the grammar up, and embedded systems from the schematic up. Most days, that means writing low-level C and C++ at the hardware interface or building robust backends in Java.</p>
+      <p class="seeking">Seeking 4 to 16-month co-op opportunities.</p>
       <div class="actions">
         <a class="btn" href="/projects/">See my projects</a>
         <a class="btn ghost" href="/blog/">Read the blog</a>
@@ -24,7 +26,7 @@ nav: home
   <div class="status">
     <div><span class="k">Currently</span><span class="v"><span class="led" aria-hidden="true"></span>IT Support Technician, Carleton University</span></div>
     <div><span class="k">Studying</span><span class="v">BCS Honours, AI &amp; ML stream, Year 3</span></div>
-    <div><span class="k">Available for</span><span class="v">4 to 16 month co-op in systems, firmware or backend engineering</span></div>
+    <div><span class="k">Available for</span><span class="v">4 to 16 month co-op in software engineering</span></div>
   </div>
 
   <section class="block">
@@ -34,34 +36,38 @@ nav: home
     </div>
     <div class="specs">
       <article class="spec c-blue">
-        <header><h3><a href="/projects/database-from-scratch/">Database from scratch</a></h3><p>A relational database in C++ with its own storage engine, SQL parser and cost-based optimizer. Verified against PostgreSQL.</p></header>
+        <header><span class="kind">Systems, C++20</span><h3><a href="/projects/database-from-scratch/">Database from scratch</a></h3><p>A relational database in C++ with its own storage engine, SQL parser and cost-based optimizer. Verified against PostgreSQL.</p></header>
         <table><tbody>
           <tr><td>Min. memory budget</td><td>4 pages</td></tr>
           <tr><td>Join algorithms</td><td>Nested loop, sort-merge, Grace hash</td></tr>
           <tr><td>Optimizer</td><td>Selinger DP, up to 6 tables</td></tr>
           <tr><td>Buffer pool</td><td>LRU / CLOCK</td></tr>
+          <tr><td>Verified against</td><td>PostgreSQL</td></tr>
         </tbody></table>
-        <div class="foot"><span class="stack">C++  SQL  GDB</span><a href="https://github.com/amiras-rabari/Database-Management-System">View code</a></div>
+        <div class="foot"><span class="stack">C++  SQL  GDB</span><span class="links"><a href="/projects/database-from-scratch/">Spec sheet</a><a href="https://github.com/amiras-rabari/Database-Management-System">View code</a></span></div>
       </article>
       <article class="spec c-teal">
-        <header><h3><a href="/projects/cinesmart/">CineSmart</a></h3><p>Movie discovery with search, watchlists and recommendations, fed by a daily ETL pipeline.</p></header>
+        <header><span class="kind">Full stack, React and Spring Boot</span><h3><a href="/projects/cinesmart/">CineSmart</a></h3><p>Movie discovery with search, watchlists and recommendations, fed by a daily ETL pipeline.</p></header>
         <table><tbody>
           <tr><td>REST endpoints</td><td>36</td></tr>
           <tr><td>Database schema</td><td>16 tables</td></tr>
-          <tr><td>Data sources</td><td>3 movie APIs</td></tr>
+          <tr><td>Data sources</td><td>OMDb, TMDB, Watchmode</td></tr>
           <tr><td>Auth</td><td>JWT, rotating refresh tokens</td></tr>
+          <tr><td>Recommender</td><td>Content-based</td></tr>
         </tbody></table>
-        <div class="foot"><span class="stack">Java  Spring Boot  React</span><a href="https://github.com/amiras-rabari/CineSmart">View code</a></div>
+        <div class="foot"><span class="stack">Java  Spring Boot  React  Redis</span><span class="links"><a href="/projects/cinesmart/">Spec sheet</a><a href="https://github.com/amiras-rabari/CineSmart">View code</a></span></div>
       </article>
       <article class="spec c-indigo">
-        <header><h3><a href="/projects/query-engine/">Relational algebra query engine</a></h3><p>Hand-written lexer, parser and semantic analyzer with line and column error messages.</p></header>
+        <header><span class="kind">Compilers, C++17</span><h3><a href="/projects/query-engine/">Relational algebra query engine</a></h3><p>Hand-written lexer, parser and semantic analyzer with line and column error messages.</p></header>
         <table><tbody>
           <tr><td>Operators</td><td>8</td></tr>
           <tr><td>Largest join benchmark</td><td>64,000 × 64,000</td></tr>
-          <tr><td>Measured growth</td><td>log-log slope 2.05</td></tr>
+          <tr><td>Join scaling</td><td>Quadratic, verified</td></tr>
+          <tr><td>Grammar</td><td>Context-free, in EBNF</td></tr>
           <tr><td>Parser</td><td>Recursive descent, LL(2)</td></tr>
+          <tr><td>Memory safety</td><td>RAII, unique_ptr AST</td></tr>
         </tbody></table>
-        <div class="foot"><span class="stack">C++17  Make  Linux</span><a href="https://github.com/amiras-rabari/Relational-Algebra-Query-Engine">View code</a></div>
+        <div class="foot"><span class="stack">C++17  Make  Linux</span><span class="links"><a href="/projects/query-engine/">Spec sheet</a><a href="https://github.com/amiras-rabari/Relational-Algebra-Query-Engine">View code</a></span></div>
       </article>
     </div>
   </section>

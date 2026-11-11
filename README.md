@@ -16,7 +16,6 @@ npm run dev      # http://localhost:4000, rebuilds when you save
    ---
    title: My post title
    date: 2026-11-08
-   tags: [systems, c]
    summary: One sentence for the blog list and link previews.
    draft: true        # optional: only shows in local preview
    cover: /assets/img/blog/my-image.png   # optional preview image

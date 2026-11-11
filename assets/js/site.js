@@ -82,23 +82,4 @@
       });
     });
   }
-
-  // Blog tag filter
-  var filters = document.querySelector('.filters');
-  if (filters) {
-    var items = document.querySelectorAll('[data-tags]');
-    function apply(tag) {
-      filters.querySelectorAll('button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.tag === tag)); });
-      items.forEach(function (li) {
-        li.hidden = tag !== 'all' && li.dataset.tags.split(' ').indexOf(tag) === -1;
-      });
-    }
-    filters.addEventListener('click', function (e) {
-      var b = e.target.closest('button'); if (!b) return;
-      apply(b.dataset.tag);
-      history.replaceState(null, '', b.dataset.tag === 'all' ? location.pathname : '#' + b.dataset.tag);
-    });
-    var initial = location.hash.slice(1);
-    if (initial && filters.querySelector('[data-tag="' + CSS.escape(initial) + '"]')) apply(initial);
-  }
 })();

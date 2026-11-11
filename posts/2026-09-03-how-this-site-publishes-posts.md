@@ -1,7 +1,6 @@
 ---
 title: How this site publishes its posts
 date: 2026-09-03
-tags: [web, tooling]
 summary: Markdown in, static HTML out. A small Node script and a GitHub Action turn each post into its own page.
 ---
 
@@ -28,7 +27,6 @@ Each file starts with a short header:
 ---
 title: How this site publishes its posts
 date: 2026-09-03
-tags: [web, tooling]
 summary: One sentence that shows up in previews.
 ---
 ```

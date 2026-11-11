@@ -25,13 +25,13 @@ nav: projects
       </article>
 
       <article class="spec c-teal">
-        <header><span class="kind">Full stack, Java</span><h3><a href="/projects/cinesmart/">CineSmart</a></h3><p>A movie discovery platform for Canada: search, watchlists, ratings, recommendations, and where each title is streaming.</p></header>
+        <header><span class="kind">Full stack, React and Spring Boot</span><h3><a href="/projects/cinesmart/">CineSmart</a></h3><p>A movie discovery platform for Canada: search, watchlists, ratings, recommendations, and where each title is streaming.</p></header>
         <table><tbody>
           <tr><td>REST endpoints</td><td>36</td></tr>
           <tr><td>Database schema</td><td>16 tables</td></tr>
           <tr><td>Data sources</td><td>OMDb, TMDB, Watchmode</td></tr>
           <tr><td>Auth</td><td>JWT, rotating refresh tokens</td></tr>
-          <tr><td>Candidates scored</td><td>300 per user</td></tr>
+          <tr><td>Recommender</td><td>Content-based</td></tr>
         </tbody></table>
         <div class="foot"><span class="stack">Java  Spring Boot  React  Redis</span><a href="/projects/cinesmart/">Read the spec sheet</a></div>
       </article>
@@ -41,7 +41,8 @@ nav: projects
         <table><tbody>
           <tr><td>Operators</td><td>8</td></tr>
           <tr><td>Largest join benchmark</td><td>64,000 × 64,000</td></tr>
-          <tr><td>Measured growth</td><td>log-log slope 2.05</td></tr>
+          <tr><td>Join scaling</td><td>Quadratic, verified</td></tr>
+          <tr><td>Grammar</td><td>Context-free, in EBNF</td></tr>
           <tr><td>Parser</td><td>Recursive descent, LL(2)</td></tr>
           <tr><td>Memory safety</td><td>RAII, unique_ptr AST</td></tr>
         </tbody></table>

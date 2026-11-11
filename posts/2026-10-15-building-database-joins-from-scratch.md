@@ -1,238 +1,188 @@
 ---
-title: "Building a Database Engine from Scratch: Block Nested Loop, Grace Hash, and Sort-Merge Joins"
+title: "Joining Tables With Almost No Memory"
 date: 2026-10-15
-tags: [databases, cpp, systems]
-summary: How I designed and built three join algorithms for my C++ database engine, and how each one stays inside a fixed memory budget.
----
-When building a relational database management system (RDBMS) from scratch in C++, few components are as critical—or as challenging to implement correctly—as the **Query Execution Engine**. At the heart of query execution sits the **Join Operator**.
-
-In relational algebra, joins are conceptually simple: take two streams of tuples, evaluate a predicate condition, and combine matching attributes. However, when dealing with datasets that far exceed available RAM, naive implementations quickly collapse under Disk I/O bottlenecks.
-
-In this blog post, I will walk through how I designed and implemented three core join algorithms for my custom C++ database engine:
-1. **Block Nested Loop Join (BNLJ)**
-2. **Grace Hash Join with Block Fallback**
-3. **Sort-Merge Join with Disk-Spilled Group Buffering**
-
-We’ll explore the architectural trade-offs, step through the actual implementation code, and look at how memory frame budget allocation (`FrameShare`) guarantees system stability under extreme memory constraints.
-
+summary: How I built three join algorithms for my own C++ database engine (nested loop, sort-merge and hash join) that work inside a hard limit of a few memory pages.
 ---
 
-## Architectural Context: The Operator Vector Pipeline
+I'm building a small relational database from scratch in C++: it stores tables on disk, reads them through its own cache, and runs queries. One of the most interesting parts to build was the **join**, the operation that matches rows from two tables.
 
-Before diving into specific join algorithms, it’s worth understanding the execution model of the engine. The system employs an **Iterator/Volcano-style model** (`open()`, `next()`, `close()`). Every operator in the pipeline is a subclass of `db::exec::Operator`, producing tuples lazily on demand.
-
-To manage physical memory deterministically without relying on host operating system page faults or runaway allocations, memory is granted to operators via an `ExecContext` using fixed-size memory frames (`share.ownFrames` and `share.streamFrames`).
-
----
-
-## 1. Block Nested Loop Join (BNLJ): The Universal Workhorse
-
-### The Problem with Naive Nested Loops
-A standard tuple-at-a-time nested loop join reads an inner table $S$ completely for *every single tuple* in the outer table $R$. If $R$ has $M$ pages and $S$ has $N$ pages, the I/O cost is $M + (|R| \cdot N)$ page reads—an absolute catastrophe for disk access.
-
-### The Solution: Frame-Buffered Outer Blocks
-**Block Nested Loop Join** mitigates this by reading the outer table $R$ in contiguous blocks that fill all available memory frames ($B - 2$ frames). For each block of $R$, we scan $S$ once. This reduces the total I/O cost down to:
-
-$$\text{Cost}_{\text{BNLJ}} = M + \left\lceil \frac{M}{B - 2} \right\rceil \cdot N \text{ page reads}$$
-
-While the number of predicate comparisons remains $O(|R| \cdot |S|)$, the reduction in disk reads is dramatic. Crucially, BNLJ works for **any predicate condition** (e.g., `<`, `>`, `!=`), not just equi-joins.
-
-### C++ Implementation Highlights
-
-The join state machine must persist between calls to `doNext(Tuple& out)`. If a tuple from the outer table cannot fit into the current block buffer (`BoundedTupleBuffer`), it is saved as a `carry_` tuple to begin the next block.
-
-```cpp
-bool NestedLoopJoinOperator::fillBlock()
-{
-    block_.clear();
-    // The tuple left over from the last block goes first.
-    if (hasCarry_)
-    {
-        block_.tryAdd(carry_);
-        hasCarry_ = false;
-    }
-    Tuple t;
-    while (!outerDone_)
-    {
-        if (!child(0).next(t))
-        {
-            outerDone_ = true;
-            child(0).close(); // Return outer page to pool immediately
-            break;
-        }
-        if (!block_.tryAdd(t))
-        {
-            carry_ = std::move(t);
-            hasCarry_ = true;
-            break;
-        }
-    }
-    return block_.size() > 0;
-}
+```sql
+SELECT * FROM Students S JOIN Enrollments E ON S.id = E.student_id;
 ```
 
-#### Key Engineering Detail: State Recovery across `doNext()`
-Because downstream operators pull one tuple at a time, `doNext()` saves its loop state via `blockIndex_` and `innerOpen_`. When an inner pass over the current outer block finishes, `child(1)` is closed, `fillBlock()` fetches the next batch of $R$, and `child(1)` is re-opened.
+The idea is simple: find every pair of rows where the keys match. Doing it fast, on tables much bigger than the memory you have, is the hard part. This post explains the problem and the three ways I solved it.
+
+## The real bottleneck: disk, not CPU
+
+A database stores tables on disk in fixed-size blocks called **pages** (4 KB each in my engine). To look at a row, its page has to be loaded into memory first. Memory is split into a few page-sized slots, and the engine can only hold that many pages at once.
+
+Two facts shape everything that follows:
+
+1. **Reading a page from disk is much slower than comparing rows in memory.** So the main cost of a join is how many pages it reads and writes.
+2. **Memory is limited.** In my engine, a query gets a fixed number of page slots, and tests run with as few as **4**. That's 16 KB for the entire query, while the tables can be hundreds of pages.
+
+I made the limit strict. Every row the join keeps in memory, even in a plain C++ list, has to be counted against the budget. If a join tries to take a fifth page when it only has four, the engine stops with an error instead of quietly using more memory. That rule is what makes these algorithms interesting.
+
+So the question becomes: **how do you match rows from two large tables while holding only a few pages at a time, and reading as few pages as possible?**
+
+Throughout, I'll call the two tables **R** (M pages) and **S** (N pages).
 
 ---
 
-## 2. Grace Hash Join: High-Throughput Equi-Joins with Dynamic Fallback
+## 1. Nested loop join: compare everything, but in batches
 
-For equality join predicates ($R.key = S.key$), hash joins offer unmatched linear $O(|R| + |S|)$ time complexity. However, when tables exceed main memory, a naive in-memory hash table will result in Out-Of-Memory (OOM) crashes.
+### The naive version
 
-To handle arbitrary data scale, I implemented **Grace Hash Join** paired with a fallback mechanism for memory overflow.
+The obvious approach: for every row of R, scan all of S and check each pair.
 
-### Phase 1: Partitioning ($h_1$)
-During `doOpen()`, both left ($R$) and right ($S$) inputs are scanned and hashed using a partition hash function $h_1$ (`kSeedPartition`). Tuples are streamed into $P$ matching disk partition files (`leftParts_` and `rightParts_`). 
-
-Because hashing is deterministic, any matching tuple pair $(r, s)$ is guaranteed to end up in the exact same partition pair $(R_i, S_i)$.
-
-$$\text{Partitioning Cost} = 2(M + N) \text{ page I/Os}$$
-
-### Phase 2: In-Memory Build & Probe ($h_2$)
-During `startPartition()`, the engine processes each partition pair $(R_i, S_i)$ sequentially:
-1. **Build:** Load $R_i$ into an in-memory hash table using a second seed hash function $h_2$ (`kSeedTable`).
-2. **Probe:** Stream $S_i$ from disk. For each tuple in $S_i$, compute $h_2(s.key)$, look up the bucket index, and test key equality.
-
-```cpp
-// In-Memory Probe Loop in doNext()
-const std::vector<Tuple>& entries = entries_->tuples();
-const std::vector<std::size_t>* bucket = 
-    &buckets_[hashKey(probe_, keys_.rightColumns, kSeedTable) % buckets_.size()];
-
-while (candidate_ < bucket->size())
-{
-    const Tuple& entry = entries[(*bucket)[candidate_]];
-    ++candidate_;
-    if (compareKeys(entry, keys_.leftColumns, probe_, keys_.rightColumns, comparisons) == 0)
-    {
-        out = entry;
-        out.insert(out.end(), probe_.begin(), probe_.end());
-        return true;
-    }
-}
+```text
+for each row r in R:
+    for each row s in S:
+        if r matches s: output (r, s)
 ```
 
-### The Hybrid Fallback: Block Nested Loop on Partition Overflow
-What happens if a single partition $R_i$ is *still* larger than the memory budget `tablePages`?
+It's correct, and it works with any condition, not only `=` but also `<`, `>=`, and so on. The trouble is disk reads: S gets read from disk **once per row of R**. With 10,000 rows in R, that's 10,000 full reads of S.
 
-Instead of failing, the operator detects the condition (`leftPart.numPages() > tablePages`) and transparently toggles **Block Mode** (`blockMode_ = true`). It logs the partition to `overflowed_` for telemetry, loads as much of $R_i$ into memory as possible, and runs Block Nested Loop Join across $(R_i, S_i)$.
+### The fix: load R in blocks
 
-```cpp
-blockMode_ = leftPart.numPages() > tablePages;
-if (!blockMode_)
-{
-    // Standard Grace Hash: load partition into hash table
-    entries_ = std::make_unique<BoundedTupleBuffer>(ctx().pool(), child(0).schema(), tablePages);
-    // ... build hash table buckets ...
-}
-else
-{
-    // Overflow Handling: Switch to Block BNLJ mode for this partition
-    overflowed_.push_back(part_);
-    entries_ = std::make_unique<BoundedTupleBuffer>(ctx().pool(), child(0).schema(), share_.streamFrames - 2);
-    buildReader_ = std::make_unique<RunReader>(ctx().engine(), leftPart, child(0).schema());
-    fillBlock();
-}
+Instead of one row of R at a time, fill all the free memory with a **block** of R's pages. Then read S **once** for the whole block and check every row of S against every row in the block.
+
+```text
+memory with 4 page slots
+┌──────────┬──────────┬──────────┬──────────┐
+│ R block  │ R block  │ S page   │ R page   │
+│ page 1   │ page 2   │ (stream) │ (reading)│
+└──────────┴──────────┴──────────┴──────────┘
 ```
 
-This hybrid approach guarantees that the engine **never crashes on skew or unexpected data volume**, maintaining system resilience.
+Now S is read once per block instead of once per row. With 2 pages per block, a 60-page R means 30 reads of S instead of thousands. With more memory, blocks get bigger and S is read fewer times. If all of R fits in one block, each table is read exactly once, and no join can do better than that.
+
+What doesn't change is the number of comparisons. Every pair is still checked, because you can't know a pair doesn't match without checking it. Blocking cuts disk reads, not CPU work.
+
+**What I had to solve:** a database runs a query as a chain of operators that hand rows to each other one at a time, so the join can't run its loops start to finish. It has to return one matching row, pause, and resume exactly where it stopped. I store "which block, which S row, which position in the block" in the operator, so each call continues the loop from where it left off.
+
+**Best for:** small tables, plenty of memory, or conditions that aren't equality.
 
 ---
 
-## 3. Sort-Merge Join: The Dual-Stream Sorted Join with Memory Spilling
+## 2. Sort-merge join: sort first, then walk once
 
-While Hash Joins excel at raw speed for equi-joins, **Sort-Merge Join (SMJ)** provides a major structural advantage: **it preserves output sort order**. If downstream operators require sorted data (e.g., `ORDER BY` or `GROUP BY`), SMJ eliminates the need for a subsequent sort step.
+### The idea
 
-### Step 1: External Run Generation & Final Merging
-In `doOpen()`, both child streams are sorted on their join keys using external multi-way merge sort (`sortToRuns`). The allocated memory frame budget `share_.streamFrames` is split between the left and right run mergers:
+If both tables are **sorted by the join key**, matching becomes a walk with two fingers, one in each table:
 
-```cpp
-const std::size_t readers = share_.streamFrames - kGroupPages; // Reserve 1 page for duplicate groups
-const std::size_t rightReaders = readers / 2;
-const std::size_t leftReaders = readers - rightReaders;
-
-leftSorter_ = sortToRuns(ctx().engine(), child(0), ascendingKeys(...), share_, leftReaders + 1, comparisons);
-rightSorter_ = sortToRuns(ctx().engine(), child(1), ascendingKeys(...), share_, rightReaders + 1, comparisons);
-
-leftSorter_->startFinalMerge();
-rightSorter_->startFinalMerge();
+```text
+R: 1  2  2  3          S: 2  2  4
+   ↑                      ↑
 ```
 
-### Step 2: Key Alignment & Group Buffering
-When merging two sorted streams, unique keys merge in $O(|R| + |S|)$ time. However, duplicate keys introduce a challenge. If $R$ has $m$ tuples with key $K$ and $S$ has $n$ tuples with key $K$, we must generate the Cartesian product $m \times n$.
+- If R's key is smaller, move R's finger forward.
+- If S's key is smaller, move S's finger forward.
+- If they're equal, you found matches.
 
-To do this efficiently, when a matching key is encountered, all contiguous tuples from $S$ sharing that key are collected into a **Group Buffer** (`collectGroup()`).
+Each table is read once, from top to bottom. No "compare everything."
 
-```cpp
-void SortMergeJoinOperator::collectGroup()
-{
-    groupKey_ = rightHead_;
-    addToGroup(rightHead_);
-    while (true)
-    {
-        hasRight_ = rightSorter_->next(rightHead_);
-        if (!hasRight_ || compareKeys(rightHead_, keys_.rightColumns, groupKey_, keys_.rightColumns, comparisons) != 0)
-            break;
-        addToGroup(rightHead_);
-    }
-    if (groupWriter_)
-    {
-        groupRun_ = groupWriter_->finish();
-        groupWriter_.reset();
-    }
-    rewindGroup();
-}
+### Sorting data bigger than memory
+
+You can't sort a 200-page table in 4 pages of memory in one go. So the engine uses **external merge sort**:
+
+1. Read the table a few pages at a time, sort each chunk in memory, and write it back to disk as a sorted **run**.
+2. Merge runs together, a few at a time, into longer sorted runs, until one sorted stream remains.
+
+The final merge doesn't get written to disk. Its rows go straight into the join, which saves a full write and read of each table.
+
+### The tricky case: duplicate keys
+
+This is where sort-merge usually goes wrong. Take the example above: R has two 2s and S has two 2s. The correct answer is **4 rows**, because every 2 in R pairs with every 2 in S.
+
+A buggy version matches the first R row with S's 2s, moves past them, and then has nothing left for the second R row: it returns 2 rows instead of 4. The fix is to **rewind**: after the first R row, go back to the start of S's group of 2s and replay it for the next R row with the same key.
+
+```text
+R=2  pairs with S's group [2, 2]   → 2 rows
+R=2  same key → rewind the group   → 2 rows
+R=3  new key → group is done       → total 4 ✓
 ```
 
-### Step 3: Graceful Disk Spilling for Giant Duplicate Groups
-What if a single duplicate key in $S$ contains millions of rows (e.g., joining on a non-unique foreign key like `country = 'USA'`)?
+Rewinding raises a problem of its own. Since S comes straight out of the sort as a stream, there's no going back. So the join **saves the current group of equal keys** in one page of memory and rewinds over that copy.
 
-By default, the operator reserves just **1 page** (`kGroupPages = 1`) in RAM for the group buffer. If the group exceeds 1 page, `addToGroup()` hands the memory frame over to a `RunWriter` and spills the group to disk:
+But what if a single key appears thousands of times, more than a page can hold? Then the join moves the group to a **temporary file on disk** and replays it from there. It reuses the same memory page to write the file, so memory use never goes above the limit. I tested this with 1,200 rows on each side all sharing one key (1.44 million output rows) using just 4 pages of memory.
 
-```cpp
-void SortMergeJoinOperator::addToGroup(const Tuple& t)
-{
-    if (!groupWriter_ && group_.tryAdd(t))
-        return; // Fits in memory frame
-        
-    if (!groupWriter_)
-    {
-        // Exceeded 1 page memory budget: transition group to disk run
-        group_.giveFrameToOutput();
-        groupWriter_ = std::make_unique<RunWriter>(ctx().engine(), child(1).schema());
-        while (group_.size() > 0)
-        {
-            groupWriter_->append(group_.tuples().back());
-            group_.popBack();
-        }
-    }
-    groupWriter_->append(t);
-}
-```
-
-When iterating through multiple matching left tuples, `rewindGroup()` simply resets the memory index or re-opens a `RunReader` over the spilled disk run (`groupRun_`).
+**Best for:** medium-sized inputs, or data that's already sorted.
 
 ---
 
-## Performance & Feature Comparison Matrix
+## 3. Hash join: split the problem into pieces that fit
 
-| Feature / Metric | Block Nested Loop Join (BNLJ) | Grace Hash Join | Sort-Merge Join (SMJ) |
-| :--- | :--- | :--- | :--- |
-| **Supported Predicates** | Any Predicate (`=`, `<`, `>`, `!=`) | Equi-joins only (`=`) | Equi-joins & range bounds |
-| **Time Complexity** | $O(\|R\| \cdot \|S\|)$ comparisons | $O(\|R\| + \|S\|)$ average | $O(\|R\| \log \|R\| + \|S\| \log \|S\|)$ |
-| **Disk I/O Complexity** | $M + \lceil M / (B-2) \rceil \cdot N$ | $3(M + N)$ | $2M(1 + \lceil \log_{B-1} \frac{M}{B} \rceil) + 2N(1 + \dots)$ |
-| **Memory Overflow Strategy** | Fits fixed $B-2$ frame limit | Block BNLJ fallback per partition | Spills duplicate group run to disk |
-| **Output Ordering** | Preserves Outer ($R$) order | Unordered (Hash bucket order) | Strictly sorted by Join Keys |
+### Why a hash map helps
+
+For an equality join, a hash map is the natural tool: put every row of R into a hash map keyed by the join value, then for each row of S, look up its key. Each lookup only checks the few rows with the same key, not all of R.
+
+The catch: the hash map has to fit in memory, and R usually doesn't.
+
+### The fix: partition first (Grace hash join)
+
+The trick is to use hashing **twice**.
+
+**Step 1: Partition.** Pick a number of buckets, P. Read R and send each row to bucket `hash(key) mod P`, written to its own file on disk. Do the same with S **using the same hash function**.
+
+```text
+            hash(key) mod 3
+  R ───────┬─────────┬─────────┐
+           ▼         ▼         ▼
+          R0        R1        R2
+          S0        S1        S2
+```
+
+The key point: **rows with the same key always land in the same bucket number.** A row in R1 can only match rows in S1. One big join has become P small, independent joins.
+
+**Step 2: Build and probe.** For each bucket pair, load R's bucket into an in-memory hash map, stream S's bucket past it, look up each row, and output the matches. Then throw the hash map away and move to the next bucket.
+
+The cost: each table is read once, written once (into buckets), and read once more, so about **3 × (M + N)** pages, whatever the table sizes. That's why hash join is the usual choice for big equality joins.
+
+### Two things I had to get right
+
+**My own hash function.** C++'s built-in `std::hash` can return different values on different compilers and machines. In my engine, the same query must report the same page counts every time on every machine, so bucket sizes can't change between machines. I wrote a hash over the exact bytes of the key (FNV-1a with a final bit-mixing step), with two different seeds: one to pick the bucket, one for the in-memory hash map. Using the same hash for both would push all of a bucket's rows into the same few hash map slots.
+
+**What if a bucket is still too big?** Partitioning assumes each bucket of R fits in memory. With skewed data it may not. If one value makes up 40% of the table, **every copy of it lands in the same bucket**, whatever hash function you use, because equal keys always hash the same. So re-hashing can't split that bucket.
+
+My solution: after partitioning, I already know each bucket's size. **Before** building a hash map, the join checks whether the bucket fits. If it doesn't, the join uses the block nested loop from section 1 on just that one bucket pair. The other buckets still use fast hash lookups, and memory is never exceeded.
+
+**Best for:** large tables joined on equality.
 
 ---
 
-## Architectural Lessons & Takeaways
+## So which one wins?
 
-Building these three join operators from scratch provided key insights into database internals:
+I measured all three on the same two tables (60 and 30 pages), giving them more and more memory. These are total pages read and written:
 
-1. **State Machine Mechanics in Push/Pull Pipelines:** Implementing operators that yield single tuples via `doNext()` requires careful state preservation across function calls (e.g., maintaining index counters, carry tuples, and active disk readers).
-2. **Deterministic Memory Budgets:** Relying on dynamic vector resizing without page constraints leads to memory instability under scale. Resource tracking via `FrameShare` enforces predictability.
-3. **Graceful Fallbacks Over Hard Limits:** Real-world data is skewed. Designing algorithms with tiered fallbacks (Grace Hash $\rightarrow$ Block BNLJ; Memory Group $\rightarrow$ Disk Run Spilling) ensures reliability across unpredictable workloads.
+| Memory (pages) | Nested loop | Sort-merge | Hash |
+|---:|---:|---:|---:|
+| 4 | 991 | 783 | **590** |
+| 8 | 371 | 424 | **323** |
+| 16 | **216** | 244 | 308 |
+| 64 | **92** | 243 | 370 |
 
-Designing database execution engines from the ground up transforms abstract algorithms into concrete systems engineering. The result is a robust, memory-aware query execution engine built for scale.
+- **With very little memory, hash join wins.** Nested loop has to re-read S over and over, and sort-merge needs extra sorting passes.
+- **With more memory, nested loop wins.** Once most of R fits in one block, S is read only a few times.
+- **The surprise: hash join got *worse* with more memory.** More memory means more buckets, and every bucket's last page is usually only partly full. With small tables and many buckets, most of those pages are nearly empty but still have to be written and read. The textbook "3 × (M + N)" assumes full pages, which only holds when the tables are much bigger than the number of buckets.
+
+That last result changed how I think about cost formulas. They're a starting point, and measuring is how you find out what they leave out.
+
+---
+
+## How I checked it's correct
+
+- **All three joins must return exactly the same rows** for the same input, including duplicate keys, empty tables, and joins whose output is larger than either input.
+- **The memory limit is checked by the engine itself.** It tracks the most pages ever held at once, and every query, including multi-join plans, runs with just 4.
+- **Nothing is left behind.** After a query finishes, the engine checks that no page is still held and no temporary file still exists.
+- **Tests that can fail.** For each test, I deliberately broke the code (for example, made sort-merge skip the rewind), confirmed the test caught it, and then restored the code.
+
+## Takeaways
+
+- **Nested loop** is simple and works for any condition. Reading the outer table in blocks turns "read S once per row" into "read S once per block."
+- **Sort-merge** pays to sort once, then matches in one pass. The hard part is duplicate keys, solved by rewinding over a saved group that can spill to disk.
+- **Hash join** splits one join too big for memory into many small ones that fit. The hard part is skew, solved by checking bucket sizes first and falling back to nested loop when a bucket is too big.
+
+All three answer the same question: *how do you avoid comparing everything with everything, without running out of memory?* Each one gives a different answer, and which is best depends on how much memory you have and how big your tables are.
+
+*Built in C++20, with no external database libraries. Every page goes through the engine's own buffer pool, and every number above comes from real runs.*
