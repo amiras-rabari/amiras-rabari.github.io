@@ -1,40 +1,29 @@
 # amiras-rabari.github.io
 
-Portfolio and blog of Amiras Rabari. Plain HTML, CSS and JavaScript, built by a small Node script and deployed to GitHub Pages.
-
-## Preview locally
-
-```
-npm install      # first time only
-npm run dev      # http://localhost:4000, rebuilds when you save
-```
-
-## Write a blog post
-
-1. Create `posts/YYYY-MM-DD-short-title.md`:
-   ```markdown
-   ---
-   title: My post title
-   date: 2026-11-08
-   summary: One sentence for the blog list and link previews.
-   draft: true        # optional: only shows in local preview
-   cover: /assets/img/blog/my-image.png   # optional preview image
-   ---
-   Post content in Markdown...
-   ```
-2. Preview with `npm run dev`.
-3. Remove `draft: true`, then commit and push. GitHub Actions builds and deploys in about a minute.
-
-Post numbers (AN-001, AN-002…) follow publish date order. The URL is `/blog/<file name without the date>/`.
+My portfolio and blog. Plain HTML, CSS and JavaScript, built by a small Node script and deployed to GitHub Pages.
 
 ## Layout
 
 | Path | What it is |
 |---|---|
-| `pages/` | One HTML file per page, with a small header (title, path, nav) |
+| `pages/` | One HTML file per page |
 | `posts/` | Blog posts in Markdown |
 | `templates/layout.html` | Shared head, header and footer |
-| `assets/` | CSS, JS, images, resume PDF |
-| `site.json` | Site URL, links, analytics and the chip pinout skills |
+| `assets/` | CSS, JS, images and my resume |
+| `site.json` | Site settings, links and the chip floorplan on the home page |
 | `scripts/build.js` | Builds everything into `_site/` |
 | `.github/workflows/deploy.yml` | Builds and deploys on every push to `main` |
+
+## How I publish posts
+
+I write each post as a Markdown file in `posts/`, named `YYYY-MM-DD-short-title.md`, with a short header:
+
+```markdown
+---
+title: Post title
+date: 2026-11-08
+summary: One sentence for the blog list and link previews.
+---
+```
+
+When I push to `main`, GitHub Actions turns every post into its own static HTML page at `/blog/short-title/` and deploys the site.
